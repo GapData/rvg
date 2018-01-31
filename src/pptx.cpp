@@ -161,6 +161,7 @@ static void pptx_metric_info(int c, const pGEcontext gc, double* ascent,
   std::string name = fontname(gc->fontfamily, gc->fontface, pptx_obj->system_aliases, pptx_obj->user_aliases);
   gdtools::context_set_font(pptx_obj->cc, name, gc->cex * gc->ps, is_bold(gc->fontface), is_italic(gc->fontface), file);
   FontMetric fm = gdtools::context_extents(pptx_obj->cc, std::string(str));
+  Rcout << "## metric_info\t{" << str << "} - mbcslocale:'" << mbcslocale << "'\n";
 
   *ascent = fm.ascent;
   *descent = fm.descent;
@@ -184,8 +185,7 @@ static void pptx_close(pDevDesc dd) {
 }
 
 
-
-static double pptx_strwidth(const char *str, const pGEcontext gc, pDevDesc dd) {
+static double pptx_strwidth_utf8(const char *str, const pGEcontext gc, pDevDesc dd) {
   PPTX_dev *pptx_obj = (PPTX_dev*) dd->deviceSpecific;
 
   std::string file = fontfile(gc->fontfamily, gc->fontface, pptx_obj->user_aliases);
@@ -196,14 +196,23 @@ static double pptx_strwidth(const char *str, const pGEcontext gc, pDevDesc dd) {
   return fm.width;
 }
 
+static double pptx_strwidth(const char *str, const pGEcontext gc, pDevDesc dd) {
+  return pptx_strwidth_utf8(Rf_translateCharUTF8(Rf_mkChar(str)), gc, dd);
+}
 
-static double pptx_strheight(const char *str, const pGEcontext gc, pDevDesc dd) {
+
+
+static double pptx_strheight_utf8(const char *str, const pGEcontext gc, pDevDesc dd) {
   PPTX_dev *pptx_obj = (PPTX_dev*) dd->deviceSpecific;
   std::string file = fontfile(gc->fontfamily, gc->fontface, pptx_obj->user_aliases);
   std::string name = fontname(gc->fontfamily, gc->fontface, pptx_obj->system_aliases, pptx_obj->user_aliases);
   gdtools::context_set_font(pptx_obj->cc, name, gc->cex * gc->ps, is_bold(gc->fontface), is_italic(gc->fontface), file);
   FontMetric fm = gdtools::context_extents(pptx_obj->cc, std::string(str));
   return fm.height;
+}
+
+static double pptx_strheight(const char *str, const pGEcontext gc, pDevDesc dd) {
+  return pptx_strheight_utf8(Rf_translateCharUTF8(Rf_mkChar(str)), gc, dd);
 }
 
 void pptx_do_polyline(NumericVector x, NumericVector y, const pGEcontext gc,
@@ -384,7 +393,7 @@ static void pptx_circle(double x, double y, double r, const pGEcontext gc,
 }
 
 
-static void pptx_text(double x, double y, const char *str, double rot,
+static void pptx_text_utf8(double x, double y, const char *str, double rot,
                      double hadj, const pGEcontext gc, pDevDesc dd) {
   PPTX_dev *pptx_obj = (PPTX_dev*) dd->deviceSpecific;
 
@@ -409,6 +418,11 @@ static void pptx_text(double x, double y, const char *str, double rot,
 
     write_text_body_pptx(dd, gc, str, hadj, fs, h);
   fputs("</p:sp>", pptx_obj->file);
+}
+
+static void pptx_text(double x, double y, const char *str, double rot,
+                     double hadj, const pGEcontext gc, pDevDesc dd) {
+  return pptx_text_utf8(x, y, Rf_translateCharUTF8(Rf_mkChar(str)), rot, hadj, gc, dd);
 }
 
 static void pptx_size(double *left, double *right, double *bottom, double *top,
@@ -549,8 +563,8 @@ pDevDesc pptx_driver_new(std::string filename, int bg, double width, double heig
   // UTF-8 support
   dd->wantSymbolUTF8 = (Rboolean) 1;
   dd->hasTextUTF8 = (Rboolean) 1;
-  dd->textUTF8 = pptx_text;
-  dd->strWidthUTF8 = pptx_strwidth;
+  dd->textUTF8 = pptx_text_utf8;
+  dd->strWidthUTF8 = pptx_strwidth_utf8;
 
   // Screen Dimensions in pts
   dd->left = 0;
