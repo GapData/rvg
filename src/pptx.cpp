@@ -396,6 +396,7 @@ static void pptx_circle(double x, double y, double r, const pGEcontext gc,
 static void pptx_text_utf8(double x, double y, const char *str, double rot,
                      double hadj, const pGEcontext gc, pDevDesc dd) {
   PPTX_dev *pptx_obj = (PPTX_dev*) dd->deviceSpecific;
+  Rcout << "## pptx_text_utf8\tstr: '" << str << "'\n";
 
   double fs = gc->cex * gc->ps ;
   double w = pptx_strwidth(str, gc, dd);
@@ -422,7 +423,9 @@ static void pptx_text_utf8(double x, double y, const char *str, double rot,
 
 static void pptx_text(double x, double y, const char *str, double rot,
                      double hadj, const pGEcontext gc, pDevDesc dd) {
-  return pptx_text_utf8(x, y, Rf_translateCharUTF8(Rf_mkChar(str)), rot, hadj, gc, dd);
+  Rcout << "## pptx_text\tstr: '" << str << " - as_utf8:'" << Rf_translateCharUTF8(Rf_mkChar(str)) << "'\n";
+
+  return pptx_text_utf8(x, y, str, rot, hadj, gc, dd);
 }
 
 static void pptx_size(double *left, double *right, double *bottom, double *top,
@@ -562,7 +565,7 @@ pDevDesc pptx_driver_new(std::string filename, int bg, double width, double heig
 
   // UTF-8 support
   dd->wantSymbolUTF8 = (Rboolean) 1;
-  dd->hasTextUTF8 = (Rboolean) 1;
+  dd->hasTextUTF8 = (Rboolean) 0;
   dd->textUTF8 = pptx_text_utf8;
   dd->strWidthUTF8 = pptx_strwidth_utf8;
 
