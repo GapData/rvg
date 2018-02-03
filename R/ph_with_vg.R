@@ -59,7 +59,7 @@ ph_with_vg <- function( x, code, ggobj = NULL, type, index = 1, ... ){
   pars$last_rel_id <- slide$relationship()$get_next_id() - 1
   pars$raster_prefix <- img_directory
   pars$standalone <- FALSE
-
+  pars <<- pars
   do.call("dml_pptx", pars)
 
   tryCatch({
@@ -71,7 +71,7 @@ ph_with_vg <- function( x, code, ggobj = NULL, type, index = 1, ... ){
   }, finally = dev.off() )
 
   raster_files <- list_raster_files(img_dir = img_directory )
-  dml_str <- scan( dml_file, what = "character", quiet = T, sep = "\n" )
+  dml_str <- scan( dml_file, what = "character", quiet = T, sep = "\n", encoding = "UTF-8" )
   if( length(raster_files) ){
     slide$reference_img(src = raster_files, dir_name = file.path(x$package_dir, "ppt/media"))
     unlink(raster_files, force = TRUE)
