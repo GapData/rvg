@@ -147,12 +147,28 @@ void write_text_body_pptx(pDevDesc dd, R_GE_gcontext *gc, const char* text, doub
 static void pptx_metric_info(int c, const pGEcontext gc, double* ascent,
                             double* descent, double* width, pDevDesc dd) {
   PPTX_dev *pptx_obj = (PPTX_dev*) dd->deviceSpecific;
-
+  bool Unicode = mbcslocale;
+  Rcout << "## metric_info\t";
   // Convert to string - negative implies unicode code point
-  char str[16];
   if (c < 0) {
-    Rf_ucstoutf8(str, (unsigned int) -c);
+    Unicode = TRUE;
+    c = -c;
+  }
+  char str[16];
+  if (!c) {
+    Rcout << "null\t";
+    str[0]='M'; str[1]='g'; str[2]=0;
+    /* this should give us a reasonably decent (g) and almost max width (M) */
+  } else if (gc->fontface == 5) {
+    Rcout << "Symbol\t";
+    char s[2];
+    s[0] = c; s[1] = '\0';
+    Rf_AdobeSymbol2utf8(str, s, 16);
+  } else if (Unicode) {
+    Rf_ucstoutf8(str, (unsigned int) c);
+    Rcout << "Unicode\t" << str;
   } else {
+    Rcout << "normal\t";
     str[0] = (char) c;
     str[1] = '\0';
   }
@@ -161,7 +177,12 @@ static void pptx_metric_info(int c, const pGEcontext gc, double* ascent,
   std::string name = fontname(gc->fontfamily, gc->fontface, pptx_obj->system_aliases, pptx_obj->user_aliases);
   gdtools::context_set_font(pptx_obj->cc, name, gc->cex * gc->ps, is_bold(gc->fontface), is_italic(gc->fontface), file);
   FontMetric fm = gdtools::context_extents(pptx_obj->cc, std::string(str));
-  Rcout << "## metric_info\t{" << str << "} - mbcslocale:'" << mbcslocale << "'\n";
+  Rcout << "\t{" << str << "} - "<<
+    " - c:" << c <<
+    " - fm.ascent:" << fm.ascent <<
+    " - fm.descent:" << fm.descent <<
+    " - fm.width:" << fm.width <<
+      "'\n";
 
   *ascent = fm.ascent;
   *descent = fm.descent;
@@ -198,6 +219,7 @@ static double pptx_strwidth_utf8(const char *str, const pGEcontext gc, pDevDesc 
 }
 
 static double pptx_strwidth(const char *str, const pGEcontext gc, pDevDesc dd) {
+  Rcout << "## pptx_strwidth\tstr: '" << str << "'\n";
   return pptx_strwidth_utf8(Rf_translateCharUTF8(Rf_mkChar(str)), gc, dd);
 }
 
@@ -212,9 +234,6 @@ static double pptx_strheight_utf8(const char *str, const pGEcontext gc, pDevDesc
   return fm.height;
 }
 
-static double pptx_strheight(const char *str, const pGEcontext gc, pDevDesc dd) {
-  return pptx_strheight_utf8(Rf_translateCharUTF8(Rf_mkChar(str)), gc, dd);
-}
 
 void pptx_do_polyline(NumericVector x, NumericVector y, const pGEcontext gc,
                           pDevDesc dd) {
@@ -400,8 +419,8 @@ static void pptx_text_utf8(double x, double y, const char *str, double rot,
   Rcout << "## pptx_text_utf8\tstr: '" << str << "'\n";
 
   double fs = gc->cex * gc->ps ;
-  double w = pptx_strwidth(str, gc, dd);
-  double h = pptx_strheight(str, gc, dd);
+  double w = pptx_strwidth_utf8(str, gc, dd);
+  double h = pptx_strheight_utf8(str, gc, dd);
   if( fs*100 < 1.0 ) return;
 
   double corrected_offx = translate_rotate_x(x, y, rot, h, w, hadj) ;
@@ -565,8 +584,8 @@ pDevDesc pptx_driver_new(std::string filename, int bg, double width, double heig
   dd->raster = pptx_raster;
 
   // UTF-8 support
-  dd->wantSymbolUTF8 = (Rboolean) 1;
-  dd->hasTextUTF8 = (Rboolean) 0;
+  dd->wantSymbolUTF8 = (Rboolean) 0;
+  dd->hasTextUTF8 = (Rboolean) 1;
   dd->textUTF8 = pptx_text_utf8;
   dd->strWidthUTF8 = pptx_strwidth_utf8;
 
