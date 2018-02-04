@@ -584,7 +584,7 @@ pDevDesc pptx_driver_new(std::string filename, int bg, double width, double heig
 
   // UTF-8 support
   dd->wantSymbolUTF8 = (Rboolean) 1;
-  dd->hasTextUTF8 = (Rboolean) 0;
+  dd->hasTextUTF8 = (Rboolean) 1;
   dd->textUTF8 = pptx_text_utf8;
   dd->strWidthUTF8 = pptx_strwidth_utf8;
 
