@@ -148,27 +148,16 @@ static void pptx_metric_info(int c, const pGEcontext gc, double* ascent,
                             double* descent, double* width, pDevDesc dd) {
   PPTX_dev *pptx_obj = (PPTX_dev*) dd->deviceSpecific;
   bool Unicode = mbcslocale;
-  Rcout << "## metric_info\t";
-  // Convert to string - negative implies unicode code point
   if (c < 0) {
     Unicode = TRUE;
     c = -c;
   }
   char str[16];
   if (!c) {
-    Rcout << "null\t";
     str[0]='M'; str[1]='g'; str[2]=0;
-    /* this should give us a reasonably decent (g) and almost max width (M) */
-  } else if (gc->fontface == 5) {
-    Rcout << "Symbol\t";
-    char s[2];
-    s[0] = c; s[1] = '\0';
-    Rf_AdobeSymbol2utf8(str, s, 16);
   } else if (Unicode) {
     Rf_ucstoutf8(str, (unsigned int) c);
-    Rcout << "Unicode\t" << str;
   } else {
-    Rcout << "normal\t";
     str[0] = (char) c;
     str[1] = '\0';
   }
@@ -177,12 +166,6 @@ static void pptx_metric_info(int c, const pGEcontext gc, double* ascent,
   std::string name = fontname(gc->fontfamily, gc->fontface, pptx_obj->system_aliases, pptx_obj->user_aliases);
   gdtools::context_set_font(pptx_obj->cc, name, gc->cex * gc->ps, is_bold(gc->fontface), is_italic(gc->fontface), file);
   FontMetric fm = gdtools::context_extents(pptx_obj->cc, std::string(str));
-  Rcout << "\t{" << str << "} - "<<
-    " - c:" << c <<
-      " - fm.ascent:" << fm.ascent <<
-        " - fm.descent:" << fm.descent <<
-          " - fm.width:" << fm.width <<
-            "'\n";
 
   *ascent = fm.ascent;
   *descent = fm.descent;
@@ -213,7 +196,6 @@ static double pptx_strwidth_utf8(const char *str, const pGEcontext gc, pDevDesc 
   std::string name = fontname(gc->fontfamily, gc->fontface, pptx_obj->system_aliases, pptx_obj->user_aliases);
   gdtools::context_set_font(pptx_obj->cc, name, gc->cex * gc->ps, is_bold(gc->fontface), is_italic(gc->fontface), file);
   FontMetric fm = gdtools::context_extents(pptx_obj->cc, std::string(str));
-  Rcout << "## pptx_strwidth_utf8\tstr: '" << str << " - width:'" << fm.width << "'\n";
 
   return fm.width;
 }
@@ -415,7 +397,6 @@ static void pptx_circle(double x, double y, double r, const pGEcontext gc,
 static void pptx_text_utf8(double x, double y, const char *str, double rot,
                      double hadj, const pGEcontext gc, pDevDesc dd) {
   PPTX_dev *pptx_obj = (PPTX_dev*) dd->deviceSpecific;
-  Rcout << "## pptx_text_utf8\tstr: '" << str << "'\n";
 
   double fs = gc->cex * gc->ps ;
   double w = pptx_strwidth_utf8(str, gc, dd);
@@ -442,7 +423,6 @@ static void pptx_text_utf8(double x, double y, const char *str, double rot,
 
 static void pptx_text(double x, double y, const char *str, double rot,
                      double hadj, const pGEcontext gc, pDevDesc dd) {
-  Rcout << "## pptx_text\tstr: '" << str << " - as_utf8:'" << Rf_translateCharUTF8(Rf_mkChar(str)) << "'\n";
 
   return pptx_text_utf8(x, y, Rf_translateCharUTF8(Rf_mkChar(str)), rot, hadj, gc, dd);
 }
