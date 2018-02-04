@@ -179,10 +179,10 @@ static void pptx_metric_info(int c, const pGEcontext gc, double* ascent,
   FontMetric fm = gdtools::context_extents(pptx_obj->cc, std::string(str));
   Rcout << "\t{" << str << "} - "<<
     " - c:" << c <<
-    " - fm.ascent:" << fm.ascent <<
-    " - fm.descent:" << fm.descent <<
-    " - fm.width:" << fm.width <<
-      "'\n";
+      " - fm.ascent:" << fm.ascent <<
+        " - fm.descent:" << fm.descent <<
+          " - fm.width:" << fm.width <<
+            "'\n";
 
   *ascent = fm.ascent;
   *descent = fm.descent;
@@ -219,7 +219,6 @@ static double pptx_strwidth_utf8(const char *str, const pGEcontext gc, pDevDesc 
 }
 
 static double pptx_strwidth(const char *str, const pGEcontext gc, pDevDesc dd) {
-  Rcout << "## pptx_strwidth\tstr: '" << str << "'\n";
   return pptx_strwidth_utf8(Rf_translateCharUTF8(Rf_mkChar(str)), gc, dd);
 }
 
@@ -584,8 +583,8 @@ pDevDesc pptx_driver_new(std::string filename, int bg, double width, double heig
   dd->raster = pptx_raster;
 
   // UTF-8 support
-  dd->wantSymbolUTF8 = (Rboolean) 0;
-  dd->hasTextUTF8 = (Rboolean) 1;
+  dd->wantSymbolUTF8 = (Rboolean) 1;
+  dd->hasTextUTF8 = (Rboolean) 0;
   dd->textUTF8 = pptx_text_utf8;
   dd->strWidthUTF8 = pptx_strwidth_utf8;
 
